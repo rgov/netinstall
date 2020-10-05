@@ -13,13 +13,13 @@ If you are looking for a complete solution that includes its own DHCP server, co
     sudo python3 netinstall.py \
         --interface en0 \
         --tftp-dir ./tftproot \
-        --boot-file netbootxyz.efi
+        --boot-file netboot.xyz.efi
 
-In the above example, we instruct clients to boot from the `[netbootxyz.efi][]` file stored in the directory `tftproot`.
+In the above example, we instruct clients to boot from the [`netboot.xyz.efi`][netboot.xyz.efi] file stored in the directory `tftproot`.
 
 [pTFTPD]: https://github.com/mpetazzoni/ptftpd
 [dnsmasq]: http://www.thekelleys.org.uk/dnsmasq/doc.html
-[netboot.xyz]: https://netboot.xyz/downloads/
+[netboot.xyz.efi]: https://netboot.xyz/downloads/
 
 
 ## Creating custom UEFI bootloaders
