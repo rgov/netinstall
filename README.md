@@ -1,6 +1,6 @@
 # Netinstall
 
-The script provides a PXE boot service including a dhcpProxy server and a TFTP server.
+The script provides a PXE boot service including servers for the dhcpProxy, HTTP, and TFTP protocols.
 
 Netinstall is designed primarily for networks with an authoritative DHCP server. It sniffs the network for DHCP Request packets and extends the DHCP server's DHCP Offer response to point to its own boot service.
 

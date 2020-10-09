@@ -1,9 +1,10 @@
 import argparse
+import http.server
+import functools
 import itertools
 import logging
 import os
 import socket
-import struct
 import threading
 import time
 
@@ -22,6 +23,11 @@ group.add_argument('--no-tftpd', dest='tftpd', action='store_false')
 group.add_argument('--tftp-dir', default='./tftproot')
 group.add_argument('--rfc1350', action='store_true')
 
+group = parser.add_argument_group('HTTP server')
+group.add_argument('--no-httpd', dest='httpd', action='store_false')
+group.add_argument('--http-dir', default='./httproot')
+group.add_argument('--http-port', default=80)
+
 group = parser.add_argument_group('Address Overrides')
 group.add_argument('--boot-server',
     help='address of boot server listening on UDP port 4011 '
@@ -36,6 +42,7 @@ group.add_argument('--tftp-server',
 args = parser.parse_args()
 
 
+args.http_dir = os.path.abspath(args.http_dir)
 args.tftp_dir = os.path.abspath(args.tftp_dir)
 if args.boot_server is None:
     args.boot_server = get_if_addr(args.interface)
@@ -50,6 +57,21 @@ logging.basicConfig(level=args.log_level)
 
 def dhcp_options_to_dict(options):
     return dict(itertools.takewhile(lambda x: x != 'end', options))
+
+
+class HTTPServerThread(threading.Thread):
+    def __init__(self):
+        super().__init__()
+        self.daemon = True
+
+        self.server = http.server.HTTPServer(
+            (args.boot_server, args.http_port),
+            functools.partial(http.server.SimpleHTTPRequestHandler,
+                              directory=args.http_dir)
+        )
+
+    def run(self):
+        self.server.serve_forever()
 
 
 class TFTPServerThread(threading.Thread):
@@ -165,6 +187,8 @@ class DHCPSnifferThread(threading.Thread):
 
 BootServerThread().start()
 DHCPSnifferThread().start()
+if args.httpd:
+    HTTPServerThread().start()
 if args.tftpd:
     TFTPServerThread().start()
 
