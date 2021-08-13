@@ -1,2 +1,7 @@
-ptftpd==1.3
 scapy==2.4.4
+
+# The latest release of ptftpd does not work on Linux due to this bug:
+# https://github.com/mpetazzoni/ptftpd/issues/19
+#
+# This patched version comes from an unmerged pull request (#33).
+git+https://github.com/alex-eri/ptftpd.git@patch-1#egg=ptftpd
