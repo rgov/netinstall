@@ -1,6 +1,5 @@
 import argparse
 import http.server
-import functools
 import itertools
 import logging
 import os
@@ -64,10 +63,10 @@ class HTTPServerThread(threading.Thread):
         super().__init__()
         self.daemon = True
 
+        os.chdir(args.http_dir)
         self.server = http.server.HTTPServer(
             (args.boot_server, args.http_port),
-            functools.partial(http.server.SimpleHTTPRequestHandler,
-                              directory=args.http_dir)
+            http.server.SimpleHTTPRequestHandler
         )
 
     def run(self):
