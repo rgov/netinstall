@@ -6,6 +6,7 @@ import os
 import socket
 import threading
 import time
+import urllib.request
 
 from ptftplib import tftpserver
 from scapy.all import *
@@ -26,6 +27,11 @@ group = parser.add_argument_group('HTTP server')
 group.add_argument('--no-httpd', dest='httpd', action='store_false')
 group.add_argument('--http-dir', default='./httproot')
 group.add_argument('--http-port', default=80, type=int)
+group.add_argument('--forward', nargs=2, dest='forwards', action='append',
+    metavar=('prefix', 'replacement'),
+    help='Forward (really, proxy) requests to another server. Be sure to '
+         'begin `prefix` with a /.'
+)
 
 group = parser.add_argument_group('Address Overrides')
 group.add_argument('--boot-server',
@@ -58,6 +64,51 @@ def dhcp_options_to_dict(options):
     return dict(itertools.takewhile(lambda x: x != 'end', options))
 
 
+class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, forwards=None, **kwargs):
+        self.forwards = forwards or []
+        super().__init__(*args, **kwargs)
+
+    def forward_request(self):
+        for prefix, replacement in self.forwards:
+            if self.path.startswith(prefix):
+                url = replacement + self.path[len(prefix):]
+                break
+        else:
+            return False
+
+        logging.debug('Proxying HTTP request to %s', url)
+
+        # Make the request to the remote server. 
+        #
+        # urllib.request makes it incredibly difficult to disable automatic
+        # error handling, so this will end up throwing an exception and not
+        # completing the request if the remote status is not 2xx or 3xx.
+        #
+        # See: https://stackoverflow.com/questions/74680393
+        request = urllib.request.Request(
+            url,
+            headers={ k: v for k, v in self.headers.items()
+                      if k.lower() != 'host' },
+            method=self.command,  # ugh why
+        )
+        response = urllib.request.urlopen(request)
+
+        # Copy the response to our client
+        self.send_response(response.status)
+        for k, v in response.headers.items():
+            self.send_header(k, v)
+        self.end_headers()
+        self.wfile.write(response.read())
+        return True
+
+    def do_GET(self):
+        self.forward_request() or super().do_GET()
+
+    def do_HEAD(self):
+        self.forward_request() or super().do_HEAD()
+
+
 class HTTPServerThread(threading.Thread):
     def __init__(self):
         super().__init__()
@@ -66,7 +117,7 @@ class HTTPServerThread(threading.Thread):
         os.chdir(args.http_dir)
         self.server = http.server.HTTPServer(
             (args.boot_server, args.http_port),
-            http.server.SimpleHTTPRequestHandler
+            functools.partial(HTTPRequestHandler, forwards=args.forwards)
         )
 
     def run(self):
