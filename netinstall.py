@@ -25,7 +25,7 @@ group.add_argument('--rfc1350', action='store_true')
 group = parser.add_argument_group('HTTP server')
 group.add_argument('--no-httpd', dest='httpd', action='store_false')
 group.add_argument('--http-dir', default='./httproot')
-group.add_argument('--http-port', default=80)
+group.add_argument('--http-port', default=80, type=int)
 
 group = parser.add_argument_group('Address Overrides')
 group.add_argument('--boot-server',
