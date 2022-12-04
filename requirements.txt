@@ -1,4 +1,4 @@
-scapy==2.4.4
+scapy==2.4.5
 
 # The latest release of ptftpd does not work on Linux due to this bug:
 # https://github.com/mpetazzoni/ptftpd/issues/19
