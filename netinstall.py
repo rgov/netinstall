@@ -202,7 +202,7 @@ class DHCPSnifferThread(threading.Thread):
         }
 
         packet = (
-            Ether(dst='ff:ff:ff:ff:ff:ff')/
+            Ether(src=get_if_hwaddr(args.interface), dst='ff:ff:ff:ff:ff:ff')/
             IP(src=args.dhcp_server, dst='255.255.255.255')/
             UDP(sport=67, dport=68)/
             BOOTP(
